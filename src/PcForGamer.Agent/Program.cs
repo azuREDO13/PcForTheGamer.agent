@@ -149,4 +149,12 @@ static class Pnp{
   }
 }
 
+// вместо жёсткого UseUrls("http://127.0.0.1:47613");
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+          ?? builder.Configuration["urls"]; // берётся из --urls
+if (string.IsNullOrWhiteSpace(urls))
+    urls = "http://127.0.0.1:47613";       // дефолт
+builder.WebHost.UseUrls(urls);
+
+
 record InstallBody(List<string> Packages, bool Silent);

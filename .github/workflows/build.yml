@@ -1,0 +1,31 @@
+name: build-agent
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore ./src/PcForGamer.Agent/PcForGamer.Agent.csproj
+      - name: Publish
+        run: dotnet publish ./src/PcForGamer.Agent/PcForGamer.Agent.csproj -c Release -o ./publish
+      - name: Install WiX
+        run: choco install wixtoolset -y
+      - name: Build MSI
+        run: |
+          $env:Path += ";C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          ./installer/build.ps1 -Configuration Release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PcForGamer.Agent
+          path: |
+            publish/PcForGamer.Agent.exe
+            publish/PcForGamer.Agent.msi

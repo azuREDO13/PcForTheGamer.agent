@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="PC For Gamer Agent" Language="1049" Version="1.0.0.0" Manufacturer="PCForGamer"
+           UpgradeCode="E2C7F2B1-3F1E-4B8D-9B8F-AAAABBBBCCCC">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <MajorUpgrade DowngradeErrorMessage="Установлена более новая версия." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Feature Id="AgentFeature" Title="Agent" Level="1">
+      <ComponentGroupRef Id="AgentFiles" />
+      <ComponentRef Id="SvcComponent" />
+    </Feature>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
+    <UIRef Id="WixUI_InstallDir" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="PCForGamer\Agent" />
+      </Directory>
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="AGENTDATA" Name="PcForGamer" />
+      </Directory>
+    </Directory>
+
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="SvcComponent" Guid="*">
+        <File Id="AgentExe" Source="$(var.PublishDir)\PcForGamer.Agent.exe" KeyPath="yes" />
+        <ServiceInstall Id="SvcInstall" Name="PcForGamerAgent" Type="ownProcess"
+                        Start="auto" ErrorControl="normal"
+                        DisplayName="PC For Gamer Agent"
+                        Description="Local helper service for pcдляигрока.рф"
+                        Arguments="" />
+        <ServiceControl Id="SvcControl" Name="PcForGamerAgent" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <ComponentGroup Id="AgentFiles">
+      <!-- Единственный EXE уже включён, но оставим группу для роста -->
+    </ComponentGroup>
+  </Product>
+</Wix>

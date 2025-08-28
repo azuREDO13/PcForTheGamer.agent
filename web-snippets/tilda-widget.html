@@ -1,0 +1,44 @@
+<script>
+(async()=>{
+  const base = "http://127.0.0.1:47613";
+  const timeout = ms => new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),ms));
+  async function jget(p, token, ms=1200){
+    const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),ms);
+    const r = await fetch(base+p, {headers:{Authorization:"Bearer "+token}, signal:ctrl.signal});
+    clearTimeout(t); return r.json();
+  }
+
+  const ui = {
+    os:  document.querySelector('#kv-os'),
+    gpu: document.querySelector('#kv-gpu'),
+    box: document.querySelector('#issues-box'),
+    toolsRow: document.querySelector('#drv-advisor .tools .row') || document.querySelector('#drv-advisor .tools')
+  };
+
+  try{
+    const tok = (await Promise.race([fetch(base+'/v1/token').then(r=>r.json()), timeout(800)])).token;
+    const [info, issues] = await Promise.all([ jget('/v1/info', tok), jget('/v1/issues', tok) ]);
+
+    if(ui.os)  ui.os.textContent  = `${info?.system?.os||'Windows'} ${info?.system?.arch||''}`;
+    if(ui.gpu) ui.gpu.textContent = (info?.gpu||[]).map(g=>g.FriendlyName||g.Name).join(' · ');
+    if(ui.box){
+      const list = issues?.issues||[];
+      ui.box.innerHTML = list.length ? list.map(x=>`
+        <div class="issue">
+          <div><b>${esc(x.FriendlyName||'Unknown')}</b> · <span style="opacity:.8">${esc(x.Class||'')}</span></div>
+          <div class="id">${esc(x.InstanceId||'')}</div>
+        </div>`).join('') : `<div class="issue" style="opacity:.8">проблем не найдено</div>`;
+    }
+  }catch(e){
+    // агент не найден — показываем кнопку
+    if(ui.toolsRow && !document.querySelector('#btn-agent-install')){
+      const a=document.createElement('a');
+      a.id='btn-agent-install'; a.className='btn btn-acc';
+      a.textContent='Скачать агент';
+      a.href='{{LINK_TO_MSI_OR_RELEASE}}'; // укажи ссылку на релиз MSI
+      ui.toolsRow.appendChild(a);
+    }
+  }
+  function esc(s){return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+})();
+</script>
